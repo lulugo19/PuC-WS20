@@ -33,6 +33,10 @@ class Peekable<T>(val iterator: Iterator<T>) {
     fun peek(): T? = next().also { lookahead = it }
 }
 
+fun Char.isNewLine() : Boolean {
+    return this == '\r' || this == '\n'
+}
+
 class Lexer(input: String) {
     private val chars = Peekable(input.iterator())
     private var lookahead: Token? = null
@@ -75,13 +79,31 @@ class Lexer(input: String) {
     }
 
     private fun consumeWhitespace() {
-        while (chars.peek()?.isWhitespace() == true) chars.next()
+        do {
+            while (chars.peek()?.isWhitespace() == true) chars.next()
+        } while (consumeComment())
+    }
+
+    private fun consumeComment() : Boolean {
+        if (chars.peek() != '/') {
+            return false
+        }
+        chars.next()
+        if (chars.peek() != '/')
+            throw Exception("unexpected /. Use // for comments.")
+        chars.next()
+
+        while (chars.peek()?.isNewLine() == false) chars.next()
+
+        return true
     }
 }
 
 fun main() {
     val input = """
-        if (\x1 -> equals 20 x1) 25
+        if (\x1 -> equals 20 x1) 25 // this is a comment
+        // another comment
+        // yet another comment
         then true
         else add 3 (multiply 4 5)
     """.trimIndent()
